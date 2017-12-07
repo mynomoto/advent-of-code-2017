@@ -35,10 +35,32 @@ part1 lines = let parsedLines = map parseLine lines
               in
               sum linesChecksum
 
+dividesEvenly : Integer -> Integer -> Bool
+dividesEvenly x y = if mod x y == 0
+                       then True
+                       else False
+
+checksumEvenly : List Integer -> Integer
+checksumEvenly input =
+  case input of
+       [] => 0
+       (x :: xs) =>
+            case find (dividesEvenly x) xs of
+                 Nothing => checksumEvenly xs
+                 (Just y) => div x y
+
 part2 : Vect n String -> Integer
+part2 lines =
+  let parsedLines = map parseLine lines
+      linesChecksum = map (checksumEvenly . reverse . sort) parsedLines
+  in
+  sum linesChecksum
+
 
 main : IO ()
 main = do
   (_ ** lines) <- readVectFile "day2.txt"
   let totalChecksum = part1 lines
-  putStrLn $ show totalChecksum
+  let evenlyChecksum = part2 lines
+  putStrLn $ "Part 1: " ++ show totalChecksum
+  putStrLn $ "Part 2: " ++ show evenlyChecksum
