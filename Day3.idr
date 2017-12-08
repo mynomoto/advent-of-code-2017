@@ -81,7 +81,7 @@ displayMemory (MkMemory direction n step position) = "Direction: " ++
                                                      (show position)
 
 main : IO ()
-main = putStrLn $ displayMemory $ closerN 1024 startWorld streamMemory
+main = putStrLn $ displayMemory $ closerN input startWorld streamMemory
 
   -- if n > target
   --    then initialMemory
