@@ -80,11 +80,16 @@ displayMemory (MkMemory direction n step position) = "Direction: " ++
                                                      ", position: " ++
                                                      (show position)
 
-main : IO ()
-main = putStrLn $ displayMemory $ closerN input startWorld streamMemory
+part1 : Integer -> Memory -> Integer
+part1 input (MkMemory direction n step position) =
+  let missing_steps = input - n
+      (a, b) = nextPosition position direction missing_steps
+  in
+  abs(a) + abs(b)
 
-  -- if n > target
-  --    then initialMemory
-  --    else if n == target
-  --         then currentMemory
-  --         else closerN target currentMemory xs
+part2 : Integer -> Integer
+
+main : IO ()
+main = do
+  putStrLn $ show $ part1 input $ closerN input startWorld streamMemory
+  putStrLn "Part2"
