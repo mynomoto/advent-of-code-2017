@@ -26,6 +26,18 @@ record Instruction where
   step : Integer
   position : Nat
 
+-- NOTE: This calculates the wrong number on a REPL but the right one compiled because of a cast mistake
+nextInstructionWrong : Instruction -> Either Integer Instruction
+nextInstructionWrong (MkInstruction {n} state step position) =
+  case natToFin position n of
+       Nothing => Left step
+       (Just x) =>
+                  let value = index x state
+                      new_state = updateAt x inc state
+                  in
+                  -- Mistake on the cast below
+                  Right (MkInstruction new_state (inc step) (position + (cast value)))
+
 nextInstruction : Instruction -> Either Integer Instruction
 nextInstruction (MkInstruction {n} state step position) =
   case natToFin position n of
@@ -34,10 +46,29 @@ nextInstruction (MkInstruction {n} state step position) =
                   let value = index x state
                       new_state = updateAt x inc state
                   in
-                  Right (MkInstruction new_state (inc step) (position + (cast value)))
+                  Right (MkInstruction new_state (inc step) (cast ((cast position) + value)))
+
+initialInstruction : Vect n Integer -> Instruction
+initialInstruction state = MkInstruction state 0 0
+
+findStep : Instruction -> Integer
+findStep state =
+  (case nextInstruction state of
+        (Left l) => l
+        (Right r) => findStep r)
+
+findStepIO : Instruction -> IO (Either Integer Instruction)
+findStepIO instruction@(MkInstruction state step position) = do
+  case nextInstruction instruction of
+       lv@(Left l) => do
+         putStrLn $ show l
+         pure lv
+       (Right r) => findStepIO r
+
 
 main : IO ()
 main = do
   (_ ** lines) <- readVectFile "day5.txt"
   let x = map ((+ 0) . cast . trim) lines
-  putStrLn $ show x
+  findStepIO $ MkInstruction [0,3,0,1,-3] 0 0
+  putStrLn("Finished:" ++ (show $ findStep $ MkInstruction [0,3,0,1,-3] 0 0))
