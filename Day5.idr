@@ -20,6 +20,12 @@ readVectFile filename =
 inc : Integer -> Integer
 inc x = x + 1
 
+jump : Integer -> Integer
+jump x =
+  if x >= 3
+     then x - 1
+     else x + 1
+
 record Instruction where
   constructor MkInstruction
   state : Vect n Integer
@@ -44,7 +50,7 @@ nextInstruction (MkInstruction {n} state step position) =
        Nothing => Left step
        (Just x) =>
                   let value = index x state
-                      new_state = updateAt x inc state
+                      new_state = updateAt x jump state
                   in
                   Right (MkInstruction new_state (inc step) (cast ((cast position) + value)))
 
@@ -70,5 +76,4 @@ main : IO ()
 main = do
   (_ ** lines) <- readVectFile "day5.txt"
   let x = map ((+ 0) . cast . trim) lines
-  findStepIO $ MkInstruction [0,3,0,1,-3] 0 0
-  putStrLn("Finished:" ++ (show $ findStep $ MkInstruction [0,3,0,1,-3] 0 0))
+  putStrLn("Finished:" ++ (show $ findStep $ MkInstruction x 0 0))
