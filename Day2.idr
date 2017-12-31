@@ -1,6 +1,8 @@
 import System
 import Data.Vect
+%default total
 
+partial
 readLines : File -> IO (n ** Vect n String)
 readLines file = do Right line <- fGetLine file | Left err => do putStrLn (show err)
                                                                  pure (_ ** [])
@@ -11,52 +13,59 @@ readLines file = do Right line <- fGetLine file | Left err => do putStrLn (show 
                        else do (_ ** moreLines) <- readLines file
                                pure (_ ** (line :: moreLines))
 
+partial
 readVectFile : (filename : String) -> IO (n ** Vect n String)
 readVectFile filename =
   do Right file <- openFile filename Read | Left err => do putStrLn (show err)
                                                            pure (_ ** [])
      readLines file
 
-parseLine : String -> List Integer
+parseLine : String -> List Nat
 parseLine x = map cast $
               words x
 
-checksum : List Integer -> Integer
+checksum : List Nat -> Nat
 checksum [] = 0
 checksum (x :: xs) =
   let min_x = foldl min x xs
       max_x = foldl max x xs
   in
-  max_x - min_x
+  minus max_x min_x
 
-part1 : Vect n String -> Integer
+part1 : Vect n String -> Nat
 part1 lines = let parsedLines = map parseLine lines
                   linesChecksum = map checksum parsedLines
               in
               sum linesChecksum
 
-dividesEvenly : Integer -> Integer -> Bool
-dividesEvenly x y = if mod x y == 0
-                       then True
-                       else False
+dividesEvenly : Nat -> Nat -> Bool
+dividesEvenly x y =
+  case y of
+       Z => False
+       (S k) => if modNatNZ x (S k) SIsNotZ == 0
+                   then True
+                   else False
 
-checksumEvenly : List Integer -> Integer
+checksumEvenly : List Nat -> Nat
 checksumEvenly input =
   case input of
        [] => 0
        (x :: xs) =>
             case find (dividesEvenly x) xs of
                  Nothing => checksumEvenly xs
-                 (Just y) => div x y
+                 (Just y) =>
+                            case y of
+                                 Z => 0
+                                 (S k) => divNatNZ x (S k) SIsNotZ
 
-part2 : Vect n String -> Integer
+part2 : Vect n String -> Nat
 part2 lines =
   let parsedLines = map parseLine lines
       linesChecksum = map (checksumEvenly . reverse . sort) parsedLines
   in
   sum linesChecksum
 
-
+partial
 main : IO ()
 main = do
   (_ ** lines) <- readVectFile "day2.txt"
