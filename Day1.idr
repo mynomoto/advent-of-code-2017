@@ -39,5 +39,5 @@ part2 input =
 
 main : IO ()
 main = do
-  putStrLn $ show $ part1 input
-  putStrLn $ show $ part2 input
+  putStrLn $ "Part 1: " ++ show (part1 input)
+  putStrLn $ "Part 2: " ++ show (part2 input)

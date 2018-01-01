@@ -165,5 +165,5 @@ part2 input memory2@(MkMemory2 direction position memory value) =
 partial
 main : IO ()
 main = do
-  putStrLn $ show $ part1 input $ closerN input startMemory streamMemory
-  putStrLn $ show $ part2 input startMemory2
+  putStrLn $ "Part 1: " ++ (show $ part1 input $ closerN input startMemory streamMemory)
+  putStrLn $ "Part 2: " ++ (show $ part2 input startMemory2)
