@@ -1,5 +1,8 @@
 import Data.Vect
 import Data.Fin
+-- real    0m36.631s
+-- user    0m36.609s
+-- sys     0m0.021s
 
 readLines : File -> IO (n ** Vect n String)
 readLines file = do Right line <- fGetLine file | Left err => do putStrLn (show err)
@@ -32,25 +35,13 @@ record Instruction where
   step : Integer
   position : Nat
 
--- NOTE: This calculates the wrong number on a REPL but the right one compiled because of a cast mistake
-nextInstructionWrong : Instruction -> Either Integer Instruction
-nextInstructionWrong (MkInstruction {n} state step position) =
-  case natToFin position n of
-       Nothing => Left step
-       (Just x) =>
-                  let value = index x state
-                      new_state = updateAt x inc state
-                  in
-                  -- Mistake on the cast below
-                  Right (MkInstruction new_state (inc step) (position + (cast value)))
-
 nextInstruction : Instruction -> Either Integer Instruction
 nextInstruction (MkInstruction {n} state step position) =
   case natToFin position n of
        Nothing => Left step
        (Just x) =>
                   let value = index x state
-                      new_state = updateAt x jump state
+                      new_state = updateAt x inc state
                   in
                   Right (MkInstruction new_state (inc step) (cast ((cast position) + value)))
 
