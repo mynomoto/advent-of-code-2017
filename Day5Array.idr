@@ -15,18 +15,18 @@ record Instruction where
   step : Integer
   position : Int
 
+Show Instruction where
+  show (MkInstruction state step position) = "Instruction: " ++ (show step) ++ " (" ++ (show position) ++ ")"
+
 nextInstruction : Instruction -> IO(Either Integer Instruction)
 nextInstruction (MkInstruction state step position) =
   do
-    putStrLn $ "Step: " ++ show step
-    putStrLn $ "Position: " ++ show position
-    putStrLn $ "length: " ++ (show (length state))
     True <- pure $ position < length state | pure (Left step)
     value <- index position state
-    putStrLn $ "value: " ++ (show (fromInteger value))
-    putStrLn $ "new Position: " ++ (show (position + (fromInteger value)))
     setAt position (inc value) state
-    pure $ Right (MkInstruction state (inc step) (position + (fromInteger value)))
+    pure $ Right (MkInstruction state (inc step) (if (fromInteger value) >= 0
+                                                     then (position + (fromInteger value))
+                                                     else (position - (abs (fromInteger value)))))
 
 findStep : Instruction -> IO(Integer)
 findStep state =
