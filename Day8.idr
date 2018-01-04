@@ -1,3 +1,5 @@
+import Data.SortedMap
+
 %default total
 
 data Action = Inc
@@ -77,12 +79,60 @@ parseInstruction input =
                      Just $ Inst register parsed_action parsed_value parsed_condition
        _ => Nothing
 
+Registers : Type
+Registers = SortedMap Register Integer
+
+%name Registers registers
+
+operatorToFn : Ord ty => Operator -> (ty -> ty -> Bool)
+operatorToFn LT = (<)
+operatorToFn GT = (>)
+operatorToFn EQ = (==)
+operatorToFn LTE = (<=)
+operatorToFn GTE = (>=)
+operatorToFn NEQ = (/=)
+
+evalCondititon : Condition -> Registers -> Bool
+evalCondititon (Cond op reg val) registers =
+  case lookup reg registers of
+       Nothing => (operatorToFn op) 0 val
+       Just x => (operatorToFn op) x val
+
+updateRegister : Registers -> Instruction -> Registers
+updateRegister registers (Inst reg Inc amount cond) =
+  if evalCondititon cond registers
+     then case lookup reg registers of
+               Nothing => insert reg amount registers
+               Just x => insert reg (x + amount) registers
+     else registers
+updateRegister registers (Inst reg Dec amount cond) =
+  if evalCondititon cond registers
+     then case lookup reg registers of
+               Nothing => insert reg (- amount) registers
+               Just x => insert reg (x - amount) registers
+     else registers
+
+maxRegister : Registers -> Integer
+maxRegister x = foldl max (-99999999) $ map snd $ toList x
+
+updateTracking : (Registers, Integer) -> Instruction -> (Registers, Integer)
+updateTracking (registers, old_max) inst =
+  let new_register = updateRegister registers inst
+      current_max = maxRegister new_register
+      new_max = max old_max current_max
+  in
+  (new_register, new_max)
 
 partial
 main : IO ()
 main = do
-  Right file <- readFile "day8-sample.txt"
+  Right file <- readFile "day8.txt"
   let input = lines file
   let parsed_input = sequence $ map parseInstruction input
-  putStrLn $ "Part 1: " ++ show parsed_input
+  case parsed_input of
+       Nothing => putStrLn("Part 1 and 2: error parsing the input\n" ++ (show $ map parseInstruction input))
+       Just x => do
+         putStrLn $ "Part 1: " ++ (show $ maxRegister $ foldl updateRegister empty x)
+         putStrLn $ "Part 2: " ++ (show $ snd $ foldl updateTracking (empty, (-999999)) x)
+
   -- putStrLn $ "Part 2: " ++ show input2
