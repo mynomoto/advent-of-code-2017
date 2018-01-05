@@ -40,15 +40,39 @@ parseGarbage xs = (Trash "", xs)
 
 data Group = T Garbage
            | G Group
+           | L (List Group)
            | S String
            | Empty
 
 %name Group group
 
+partial
 accumulateGroup : Group -> List Char -> (Group, List Char)
+accumulateGroup acc [] = (acc , [])
 accumulateGroup acc ('}' :: xs) = (acc , [])
-accumulateGroup xs ys = ?accumulateGroup_rhs
+accumulateGroup acc chars@('<' :: xs) =
+  case parseGarbage chars of
+       (trash, rest) =>
+                       case acc of
+                            (L xs) => accumulateGroup (L (xs ++ [T trash])) rest
+                            Empty => accumulateGroup (T trash) rest
+                            single_element => accumulateGroup (L ([single_element] ++ [T trash])) rest
+accumulateGroup acc chars@('{' :: xs) =
+  case accumulateGroup Empty chars of
+       (group, rest) =>
+                       case acc of
+                            (L xs) => accumulateGroup (L (xs ++ [G group])) rest
+                            Empty => accumulateGroup (G group) rest
+                            single_element => accumulateGroup (L ([single_element] ++ [G group])) rest
+accumulateGroup acc chars@(x :: xs) =
+  case span (\char => char /= '}' && char /= '<' && char /= '{') chars of
+       (str, rest) =>
+                     case acc of
+                          (L xs) => accumulateGroup (L (xs ++ [S (pack str)])) rest
+                          Empty => accumulateGroup (S (pack str)) rest
+                          single_element => accumulateGroup (L ([single_element] ++ [S (pack str)])) rest
 
+partial
 parseGroup : List Char -> (Group, List Char)
 parseGroup [] = (S "", [])
 parseGroup ('{' :: xs) = accumulateGroup Empty xs
