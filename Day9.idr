@@ -54,23 +54,34 @@ group10 = "{{<!!>},{<!!>},{<!!>},{<!!>}}"
 group11 : String
 group11 = "{{<a!>},{<a!>},{<a!>},{<ab>}}"
 
+data GarbageContents = Active String
+                     | Canceled Char
 
-data Garbage = Trash String
+Show GarbageContents where
+  show (Active x) = "Active: (" ++ x ++ ")"
+  show (Canceled x) = "Canceled: (" ++ singleton x ++ ")"
+
+data Garbage = Trash (List GarbageContents)
+
 %name Garbage garbage
 
 Show Garbage where
-  show (Trash x) = "(" ++ x ++ ")"
+  show (Trash xs) = "<" ++ show xs ++ ">"
 
-accumulateGarbage : List Char -> List Char -> (Garbage, List Char)
-accumulateGarbage acc [] = (Trash (pack acc), [])
-accumulateGarbage acc ('>' :: xs) = (Trash (pack (acc ++ ['>'])), xs)
-accumulateGarbage acc ('!' :: x :: xs) = accumulateGarbage (acc ++ ['!', x]) xs
-accumulateGarbage acc (x :: xs) = accumulateGarbage (acc ++ [x]) xs
+partial
+accumulateGarbage : Garbage -> List Char -> (Garbage, List Char)
+accumulateGarbage acc [] = (acc, [])
+accumulateGarbage acc ('>' :: xs) = (acc, xs)
+accumulateGarbage (Trash t) ('!' :: x :: xs) = accumulateGarbage (Trash (t ++ [Canceled x])) xs
+accumulateGarbage (Trash t) chars =
+  case span (\char => char /= '>' && char /= '!') chars of
+       (str, rest) => accumulateGarbage (Trash (t ++ [Active (pack str)])) rest
 
+partial
 parseGarbage : List Char -> (Garbage, List Char)
-parseGarbage [] = (Trash "", [])
-parseGarbage ('<' :: xs) = accumulateGarbage ['<'] xs
-parseGarbage xs = (Trash "", xs)
+parseGarbage [] = (Trash [], [])
+parseGarbage ('<' :: xs) = accumulateGarbage (Trash []) xs
+parseGarbage xs = (Trash [], xs)
 
 data String
 
@@ -122,12 +133,27 @@ score cs (T garbage) = 0
 score cs (G xs) = cs + (foldl (+) 0 (map (score (1 + cs)) xs))
 score cs (S x) = 0
 
+countGarbageContents : GarbageContents -> Nat
+countGarbageContents (Active x) = length x
+countGarbageContents (Canceled x) = Z
+
+countGarbage : Garbage -> Nat
+countGarbage (Trash xs) = foldl (+) 0 $ map countGarbageContents xs
+
+partial
+countGarbageInGroup : Group -> Nat
+countGarbageInGroup (T garbage) = countGarbage garbage
+countGarbageInGroup (G xs) = foldl (+) 0 $ map countGarbageInGroup xs
+countGarbageInGroup (S x) = Z
+
 partial
 main : IO ()
 main = do
   Right file <- readFile "day9.txt"
   let input = score 1 $ fst $ parseGroup $ unpack $ file
   putStrLn $ "Part 1: " ++ show input
+  let input2 = countGarbageInGroup $ fst $ parseGroup $ unpack $ file
+  putStrLn $ "Part 2: " ++ show input2
   -- putStrLn ("garbage 1: " ++ (show $ parseGarbage $ unpack $ garbage1))
   -- putStrLn ("garbage 2: " ++ (show $ parseGarbage $ unpack $ garbage2))
   -- putStrLn ("garbage 3: " ++ (show $ parseGarbage $ unpack $ garbage3))
@@ -146,5 +172,3 @@ main = do
   -- putStrLn ("group 9: " ++ (show $ score 1 $ fst $ parseGroup $ unpack $ group9))
   -- putStrLn ("group 10: " ++ (show $ score 1 $ fst $ parseGroup $ unpack $ group10))
   -- putStrLn ("group 11: " ++ (show $ score 1 $ fst $ parseGroup $ unpack $ group11))
-  -- let input2 = file
-  -- putStrLn $ "Part 2: " ++ show input2
