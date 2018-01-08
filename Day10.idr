@@ -30,10 +30,10 @@ circularTake xs i s =
              (begin_rest, (taken, (take (cast ((cast s) - (the Integer (cast taken_size)))) begin)), [])
        EQ => let end = drop s to_take
              in
-             (begin, ([], taken), end)
+             (begin, (taken, []), end)
        GT => let end = drop s to_take
              in
-             (begin, ([], taken), end)
+             (begin, (taken, []), end)
 
 reverseCircularTaken : (List a, (List a, List a), List a) -> List a
 reverseCircularTaken (begin, (taken_from_end, taken_from_begin), end) =
@@ -44,13 +44,25 @@ reverseCircularTaken (begin, (taken_from_end, taken_from_begin), end) =
   (drop taken_from_end_size reverse_taken) ++ begin ++ (take taken_from_end_size reverse_taken) ++ end
 
 partial
+calculateHash : (idx : Nat) -> (skip : Nat) -> (sizes : List Nat) -> (list : List a) -> List a
+calculateHash idx skip [] list = list
+calculateHash idx skip (x :: xs) list =
+  let new_list = reverseCircularTaken $ circularTake list idx x
+  in
+  calculateHash (modNat (idx + x + skip) (length list)) (S skip) xs new_list
+
+partial
 main : IO ()
 main = do
   Right file <- readFile "day10.txt"
-  putStrLn $ show $ map (the Nat . cast) $ splitOn file ','
+  let input = map (the Nat . cast) $ splitOn file ','
   let list = natRange 256
-  putStrLn $ show list
-  -- let input = length $ filter not $ map (hasDuplicated . words) $ lines file
+  let sample_list = natRange 5
+  let sample_input = [3, 4, 1, 5]
+  let final_list = calculateHash startIndex startSkip input list
+  case final_list of
+       x :: y :: xs => putStrLn $ "Part 1: " ++ show (x * y)
+       x => putStrLn $ "Part 1 (ERROR): " ++ show x
+
   -- let input2 = length $ filter not $ map hasDuplicated $ map (hasAnagram . words) $ lines file
-  -- putStrLn $ "Part 1: " ++ show input
   -- putStrLn $ "Part 2: " ++ show input2
