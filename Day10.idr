@@ -1,3 +1,5 @@
+import Data.Bits
+
 %default total
 
 partial
@@ -51,6 +53,38 @@ calculateHash idx skip (x :: xs) list =
   in
   calculateHash (modNat (idx + x + skip) (length list)) (S skip) xs new_list
 
+standardSuffix : List Int
+standardSuffix = [17, 31, 73, 47, 23]
+
+replicateList : Nat -> List a -> List a
+replicateList Z xs = xs
+replicateList (S k) xs = xs ++ (replicateList k xs)
+
+partial
+denseHash : List (Bits 8) -> List Nat -> List (Bits 8)
+denseHash acc [] = acc
+denseHash acc x =
+  let to_hash = take 16 x
+      hash = foldl xor (intToBits 0) $ map (intToBits . cast) to_hash
+  in
+  denseHash (acc ++ [hash]) (drop 16 x)
+
+toHexC : Nat -> Char
+toHexC n =
+  let hex_chars = (unpack "0123456789abcdef")
+  in
+  case inBounds n hex_chars of
+       (Yes prf) => index n hex_chars
+       (No contra) => 'x'
+
+-- toHexI :: Int -> String
+-- toHexI n = let l = n `shiftR` 4
+--                r = n .&. 0x0f -- .&. is bitwise and
+--            in [toHexC l, toHexC r]
+
+-- toHex :: [Int] -> String
+-- toHex = concatMap toHexI
+
 partial
 main : IO ()
 main = do
@@ -64,5 +98,8 @@ main = do
        x :: y :: xs => putStrLn $ "Part 1: " ++ show (x * y)
        x => putStrLn $ "Part 1 (ERROR): " ++ show x
 
-  -- let input2 = length $ filter not $ map hasDuplicated $ map (hasAnagram . words) $ lines file
+  let sample_file = "1,2,3"
+  let input2 = (map ord$ unpack sample_file) ++ standardSuffix
+  putStrLn $ show $ replicateList 63 input2
+
   -- putStrLn $ "Part 2: " ++ show input2
