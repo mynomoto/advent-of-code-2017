@@ -34,8 +34,14 @@ circularTake xs i s =
        GT => let end = drop s to_take
              in
              (begin, ([], taken), end)
-  -- taken
 
+reverseCircularTaken : (List a, (List a, List a), List a) -> List a
+reverseCircularTaken (begin, (taken_from_end, taken_from_begin), end) =
+  let taken_from_end_size = length taken_from_end
+      taken_from_begin_size = length taken_from_begin
+      reverse_taken = reverse(taken_from_end ++ taken_from_begin)
+  in
+  (drop taken_from_end_size reverse_taken) ++ begin ++ (take taken_from_end_size reverse_taken) ++ end
 
 partial
 main : IO ()
