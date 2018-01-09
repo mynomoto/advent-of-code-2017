@@ -19,21 +19,21 @@ startIndex = 0
 startSkip : Nat
 startSkip = 0
 
-circularTake : List a -> (i : Nat) -> (s : Nat) -> (List a, (List a, List a), List a)
+circularTake : List a -> (i : Nat) -> (s : Int) -> (List a, (List a, List a), List a)
 circularTake xs i s =
   let begin = take i xs
       to_take = drop i xs
-      taken = take s to_take
+      taken = take (cast s) to_take
       taken_size = size taken
   in
-  case compare taken_size s of
+  case compare taken_size (cast s) of
        LT => let begin_rest = (drop (cast ((cast s) - (the Integer (cast taken_size)))) begin)
              in
              (begin_rest, (taken, (take (cast ((cast s) - (the Integer (cast taken_size)))) begin)), [])
-       EQ => let end = drop s to_take
+       EQ => let end = drop (cast s) to_take
              in
              (begin, (taken, []), end)
-       GT => let end = drop s to_take
+       GT => let end = drop (cast s) to_take
              in
              (begin, (taken, []), end)
 
@@ -46,12 +46,12 @@ reverseCircularTaken (begin, (taken_from_end, taken_from_begin), end) =
   (drop taken_from_end_size reverse_taken) ++ begin ++ (take taken_from_end_size reverse_taken) ++ end
 
 partial
-calculateHash : (idx : Nat) -> (skip : Nat) -> (sizes : List Nat) -> (list : List a) -> List a
+calculateHash : (idx : Nat) -> (skip : Nat) -> (sizes : List Int) -> (list : List a) -> List a
 calculateHash idx skip [] list = list
 calculateHash idx skip (x :: xs) list =
   let new_list = reverseCircularTaken $ circularTake list idx x
   in
-  calculateHash (modNat (idx + x + skip) (length list)) (S skip) xs new_list
+  calculateHash (modNat (idx + (cast x) + skip) (length list)) (S skip) xs new_list
 
 standardSuffix : List Int
 standardSuffix = [17, 31, 73, 47, 23]
@@ -69,27 +69,33 @@ denseHash acc x =
   in
   denseHash (acc ++ [hash]) (drop 16 x)
 
-toHexC : Nat -> Char
+hexStringValues : List String
+hexStringValues = map singleton (unpack "0123456789abcdef")
+
+toHexC : Nat -> String
 toHexC n =
-  let hex_chars = (unpack "0123456789abcdef")
+  case inBounds n hexStringValues of
+       (Yes prf) => index n hexStringValues
+       (No contra) => "x"
+
+zeroF : Bits 8
+zeroF = intToBits 0x0f
+
+toHexI : Int -> String
+toHexI n =
+  let l = n `shiftR` 4
+      r = (bitsToInt (and (intToBits (cast n)) zeroF))
   in
-  case inBounds n hex_chars of
-       (Yes prf) => index n hex_chars
-       (No contra) => 'x'
+  (toHexC (cast l)) ++ (toHexC (cast r))
 
--- toHexI :: Int -> String
--- toHexI n = let l = n `shiftR` 4
---                r = n .&. 0x0f -- .&. is bitwise and
---            in [toHexC l, toHexC r]
-
--- toHex :: [Int] -> String
--- toHex = concatMap toHexI
+toHex : List Int -> String
+toHex = concatMap toHexI
 
 partial
 main : IO ()
 main = do
   Right file <- readFile "day10.txt"
-  let input = map (the Nat . cast) $ splitOn file ','
+  let input = map (the Int . cast) $ splitOn file ','
   let list = natRange 256
   let sample_list = natRange 5
   let sample_input = [3, 4, 1, 5]
@@ -100,6 +106,10 @@ main = do
 
   let sample_file = "1,2,3"
   let input2 = (map ord$ unpack sample_file) ++ standardSuffix
-  putStrLn $ show $ replicateList 63 input2
+  let input2_64rounds = replicateList 63 input2
+  let hash_2 = calculateHash startIndex startSkip input2_64rounds list
+  let hex_hash = toHex $ map (fromInteger . bitsToInt) $ denseHash [] hash_2
+  putStrLn hex_hash
 
+  -- putStrLn $ show $ toHex $ map (fromInteger . bitsToInt) $ denseHash $ map intToBits hash_2
   -- putStrLn $ "Part 2: " ++ show input2
