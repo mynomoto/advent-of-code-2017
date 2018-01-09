@@ -105,11 +105,8 @@ main = do
        x => putStrLn $ "Part 1 (ERROR): " ++ show x
 
   let sample_file = "1,2,3"
-  let input2 = (map ord$ unpack sample_file) ++ standardSuffix
+  let input2 = (map ord $ unpack $ trim file) ++ standardSuffix
   let input2_64rounds = replicateList 63 input2
   let hash_2 = calculateHash startIndex startSkip input2_64rounds list
   let hex_hash = toHex $ map (fromInteger . bitsToInt) $ denseHash [] hash_2
-  putStrLn hex_hash
-
-  -- putStrLn $ show $ toHex $ map (fromInteger . bitsToInt) $ denseHash $ map intToBits hash_2
-  -- putStrLn $ "Part 2: " ++ show input2
+  putStrLn $ "Part 2: " ++ hex_hash
