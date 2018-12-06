@@ -32,7 +32,7 @@
        (apply max)))
 
 (defn day11-part2
-  []
+  [day11-input]
   (->> (str/split (str/trim day11-input) #",")
        (reductions (fn [current movement]
                      (let [[x y z] current
@@ -43,3 +43,15 @@
                   (map abs)
                   (reduce max)))
        (reduce max)))
+
+(def day12-input (str/split-lines (slurp (io/resource "day12-input"))))
+
+(defn parse-group
+  [group]
+  (-> group
+      (str/replace " <->" ",")
+      (str/split #", ")
+      (->> (map #(Integer/parseInt %))
+           set)))
+
+(defn day12-part1 [day12-input] (map parse-group day12-input))
